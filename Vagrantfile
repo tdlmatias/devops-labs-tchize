@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
     ansible_tower.vm.network "public_network"
 
     # Adding a shell script provisioner to run updateOS.sh as root
-    ansible_tower.vm.provision "shell", path: "updateCentos.sh", privileged: true
+    ansible_tower.vm.provision "shell", path: "scripts/updateCentos.sh", privileged: true
   end
 
   # Deployment Environment 1
@@ -22,7 +22,7 @@ Vagrant.configure("2") do |config|
     deploy_env1.vm.network "public_network"
 
     # Adding a shell script provisioner to run updateOS.sh as root
-    deploy_env1.vm.provision "shell", path: "updateCentos.sh", privileged: true
+    deploy_env1.vm.provision "shell", path: "scripts/updateCentos.sh", privileged: true
   end
 
   # Deployment Environment 2
@@ -32,7 +32,7 @@ Vagrant.configure("2") do |config|
     deploy_env2.vm.network "public_network"
 
     # Adding a shell script provisioner to run updateOS.sh as root
-    deploy_env2.vm.provision "shell", path: "updateCentos.sh", privileged: true
+    deploy_env2.vm.provision "shell", path: "scripts/updateCentos.sh", privileged: true
   end
 
   # Provisioning with Ansible (Optional)
