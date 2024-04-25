@@ -1,0 +1,8 @@
+userBox: vagrant
+env1: ansible_tower
+env2: deploy_env1
+env3: deploy_env2
+homepath: /Users/imcreation/Developer/LabDev/Ansible-LabEnv/
+pvKeys1: "{{ homepath }}/.vagrant/machines/{{ env1 }}/virtualbox/private_key"
+pvKeys2: "{{ homepath }}/.vagrant/machines/{{ env2 }}/virtualbox/private_key"
+pvKeys3: "{{ homepath }}/.vagrant/machines/{{ env3 }}/virtualbox/private_key"

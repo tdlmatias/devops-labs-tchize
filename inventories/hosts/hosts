@@ -1,0 +1,11 @@
+[instance_group]
+192.168.1.245   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/{{ projectPath }}/.vagrant/machines/ansible_tower/virtualbox/private_key
+192.168.1.246   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/{{ projectPath }}/.vagrant/machines/deploy_env1/virtualbox/private_key
+192.168.1.247   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/LabDev/Ansible-LabEnv/.vagrant/machines/deploy_env2/virtualbox/private_key
+
+[tower]
+192.168.1.245   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/{{ projectPath }}/.vagrant/machines/ansible_tower/virtualbox/private_key
+
+[workernodes]
+192.168.1.246   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/{{ projectPath }}/.vagrant/machines/deploy_env1/virtualbox/private_key
+192.168.1.247   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/{{ projectPath }}/.vagrant/machines/deploy_env2/virtualbox/private_key
