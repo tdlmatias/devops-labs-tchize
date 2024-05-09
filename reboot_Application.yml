@@ -1,0 +1,34 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Identify server role (wase or backend)
+      set_fact:
+        server_role: "{{ groups | difference(inventory_hostname) | first }}"
+
+    - block:
+        - name: Stop applications (Frontend only)
+          include: stop_Application.yml
+          when: server_role == "wase"
+          register: stop_apps
+
+        - name: Stop applications (backend only)
+          include: stop_Application.yml
+          when: server_role == "backend"
+          register: stop_backend_apps
+      delegate_to: "{{ inventory_hostname }}"
+    
+    - name: Reboot server (conditional)
+      include: reboot_server.yml
+      when: (server_role == "wase" and stop_apps.rc == 0) or (server_role ==
+        "backend" and stop_backend_apps.rc == 0)
+
+    - block:
+        - name: Start applications (frontend only)
+          include: start_Application.yml
+          when: server_role == "frontend"0-
+        - name: Start applications (backend only)
+          include: start_backend_apps.yml
+          when: server_role == "backend"
+      delegate_to: "{{ inventory_hostname }}"
+
