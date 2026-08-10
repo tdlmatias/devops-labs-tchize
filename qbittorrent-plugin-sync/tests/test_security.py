@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import socket
+
 import pytest
 
+from qbt_sync.models import SecurityFinding
 from qbt_sync.security import (
     MAX_PLUGIN_SIZE,
     UrlValidationError,
     inspect_source,
     sha256_hex,
+    summarise_findings,
     validate_url,
 )
 
@@ -71,6 +75,33 @@ def test_validate_url_rejects_malformed():
         validate_url("not a url", check_dns=False)
     with pytest.raises(UrlValidationError):
         validate_url("https://", check_dns=False)
+
+
+def test_validate_url_rejects_ipv6_loopback_without_dns():
+    # ::1 is IPv6 loopback and must be rejected even when DNS checks are skipped.
+    with pytest.raises(UrlValidationError):
+        validate_url("https://[::1]/plugin.py", check_dns=False)
+
+
+def test_validate_url_dns_failure_is_unsafe(monkeypatch):
+    def fake_getaddrinfo(*args, **kwargs):
+        raise socket.gaierror("name resolution failed")
+
+    monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)
+    # A host that cannot be resolved is treated as unsafe.
+    with pytest.raises(UrlValidationError):
+        validate_url("https://does-not-resolve.example/plugin.py", check_dns=True)
+
+
+def test_summarise_findings():
+    findings = [
+        SecurityFinding("import", "imports module 'subprocess'", 1),
+        SecurityFinding("call", "calls builtin 'eval()'", 5),
+    ]
+    summary = summarise_findings(findings)
+    assert "subprocess" in summary
+    assert "eval" in summary
+    assert summarise_findings([]) == "no findings"
 
 
 # --------------------------- source inspection ------------------------------ #

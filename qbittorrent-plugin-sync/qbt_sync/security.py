@@ -116,9 +116,18 @@ def validate_url(url: str, *, require_https: bool = True, check_dns: bool = True
             f"Host '{host}' resolves to a private/internal/loopback address."
         )
     if not check_dns:
-        # Still catch obvious literal localhost even when DNS checks are skipped.
-        if host.lower() in {"localhost"} or host.startswith("127."):
-            raise UrlValidationError(f"Host '{host}' is a loopback address.")
+        # Even when DNS resolution is skipped, still reject literal loopback/
+        # private IPs (IPv4 *and* IPv6, e.g. ::1) and the localhost name.
+        try:
+            ip = ipaddress.ip_address(host)
+        except ValueError:
+            if host.lower() in {"localhost", "localhost.localdomain"}:
+                raise UrlValidationError(f"Host '{host}' is a loopback address.")
+        else:
+            if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_reserved:
+                raise UrlValidationError(
+                    f"Host '{host}' is a private/internal/loopback address."
+                )
 
     return url
 
@@ -241,15 +250,6 @@ class _DangerVisitor(ast.NodeVisitor):
                     _SUSPECT_ATTR_CALLS[key],
                     node.lineno,
                 )
-        self.generic_visit(node)
-
-    def visit_Attribute(self, node: ast.Attribute) -> None:
-        # Catch ``os.system`` referenced without a direct Call as well.
-        if isinstance(node.value, ast.Name):
-            key = (node.value.id, node.attr)
-            if key in _SUSPECT_ATTR_CALLS:
-                # Only record if not already the same line captured by visit_Call.
-                pass
         self.generic_visit(node)
 
 

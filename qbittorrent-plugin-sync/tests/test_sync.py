@@ -146,6 +146,51 @@ def test_plan_high_risk_is_suspicious(monkeypatch):
     assert resolutions[0].action is ActionType.SKIP
 
 
+def test_plan_include_discouraged_allows_install(monkeypatch):
+    monkeypatch.setattr(cli, "inspect_candidate", lambda s, r, **k: _safe_report())
+    catalogue = [cat("Bad", "https://x/bad.py", status="DISCOURAGED")]
+    resolutions = cli.reconcile(catalogue, [])
+    cli.plan_actions(
+        None, resolutions,
+        make_args(install_missing=True, include_discouraged=True), running_py=(3, 11),
+    )
+    assert resolutions[0].action is ActionType.INSTALL
+
+
+def test_plan_include_suspicious_allows_install(monkeypatch):
+    def fake_inspect(session, res, **k):
+        rep = SecurityReport(sha256="x", syntax_valid=True, risk="HIGH")
+        res.security = rep
+        return rep
+
+    monkeypatch.setattr(cli, "inspect_candidate", fake_inspect)
+    catalogue = [cat("Risky", "https://x/risky.py")]
+    resolutions = cli.reconcile(catalogue, [])
+    cli.plan_actions(
+        None, resolutions,
+        make_args(install_missing=True, include_suspicious=True), running_py=(3, 11),
+    )
+    assert resolutions[0].action is ActionType.INSTALL
+
+
+def test_plan_incompatible_python_is_skipped():
+    catalogue = [
+        cat("Fancy", "https://x/fancy.py", comments="qbt 5 / Python 3.99+")
+    ]
+    resolutions = cli.reconcile(catalogue, [])
+    cli.plan_actions(None, resolutions, make_args(install_missing=True), running_py=(3, 11))
+    assert resolutions[0].status is SyncStatus.INCOMPATIBLE
+    assert resolutions[0].action is ActionType.SKIP
+
+
+def test_plan_missing_download_url_is_skipped():
+    catalogue = [cat("NoUrl", download_url=None, status="OK")]
+    resolutions = cli.reconcile(catalogue, [])
+    cli.plan_actions(None, resolutions, make_args(install_missing=True), running_py=(3, 11))
+    assert resolutions[0].status is SyncStatus.SKIPPED_WARNING
+    assert resolutions[0].action is ActionType.SKIP
+
+
 # ------------------------------- apply -------------------------------------- #
 class FakeQbt:
     def __init__(self, plugins=None, install_result=None, update_bumps=None):
@@ -233,6 +278,41 @@ def test_apply_update_advances_version():
     assert qbt.update_called
     assert res.result is ActionResult.SUCCESS
     assert res.status is SyncStatus.CURRENT
+
+
+def test_apply_update_falls_back_to_safe_reinstall():
+    # updatePlugins leaves the plugin behind; a safe source triggers reinstall.
+    c = cat("Old", "https://x/oldplugin.py", version="2.0")
+    installed = inst("oldplugin", version="1.0")
+    res = cli.reconcile([c], [installed])[0]
+    res.action = ActionType.UPDATE
+    res.security = _safe_report()
+
+    qbt = FakeQbt(
+        plugins=[installed],
+        update_bumps={"oldplugin": "1.0"},               # update does not advance
+        install_result={"https://x/oldplugin.py": inst("oldplugin", version="2.0")},
+    )
+    cli.apply_actions(qbt, [res], make_args(apply=True))
+    assert qbt.update_called
+    assert qbt.install_calls == ["https://x/oldplugin.py"]
+    assert res.result is ActionResult.SUCCESS
+    assert res.status is SyncStatus.CURRENT
+
+
+def test_apply_update_no_safe_source_is_verify_failed():
+    c = cat("Old", "https://x/oldplugin.py", version="2.0")
+    installed = inst("oldplugin", version="1.0")
+    res = cli.reconcile([c], [installed])[0]
+    res.action = ActionType.UPDATE
+    res.security = None  # no inspected source -> reinstall must not proceed
+
+    qbt = FakeQbt(plugins=[installed], update_bumps={"oldplugin": "1.0"})
+    cli.apply_actions(qbt, [res], make_args(apply=True))
+    assert qbt.update_called
+    assert qbt.install_calls == []  # never reinstalled without a safe source
+    assert res.result is ActionResult.VERIFY_FAILED
+    assert "no safe source" in (res.error or "")
 
 
 def test_dry_run_marks_planned_actions():

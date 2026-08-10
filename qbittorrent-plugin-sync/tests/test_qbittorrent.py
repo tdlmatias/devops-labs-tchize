@@ -7,11 +7,14 @@ from __future__ import annotations
 
 import pytest
 
+from qbt_sync import qbittorrent as qbt_module
+from qbt_sync.httpclient import DownloadError
 from qbt_sync.models import InstalledPlugin
 from qbt_sync.qbittorrent import (
     QbtApiError,
     QbtAuthError,
     QbtClient,
+    QbtConnectionError,
     QbtSearchUnavailable,
 )
 
@@ -172,6 +175,57 @@ def test_get_plugins_search_unavailable():
     client = _authed(fake)
     with pytest.raises(QbtSearchUnavailable):
         client.get_plugins()
+
+
+def test_get_plugins_403_raises_auth_error():
+    fake = FakeSession()
+    fake.get_map[f"{BASE}/api/v2/search/plugins"] = FakeResponse(403, "forbidden")
+    client = _authed(fake)
+    with pytest.raises(QbtAuthError):
+        client.get_plugins()
+
+
+def test_get_plugins_non_list_json_raises_api_error():
+    fake = FakeSession()
+    # A well-formed JSON object (not an array) must not crash iteration.
+    fake.get_map[f"{BASE}/api/v2/search/plugins"] = FakeResponse(
+        200, json_data={"unexpected": "shape"}
+    )
+    client = _authed(fake)
+    with pytest.raises(QbtApiError):
+        client.get_plugins()
+
+
+def test_get_plugins_connection_failure_maps_to_qbt_connection_error(monkeypatch):
+    fake = FakeSession()
+    client = _authed(fake)
+
+    def boom(*args, **kwargs):
+        raise DownloadError("network down after retries")
+
+    # A transient GET failure must surface as QbtConnectionError (exit code 3),
+    # not an unhandled DownloadError.
+    monkeypatch.setattr(qbt_module, "get_with_retries", boom)
+    with pytest.raises(QbtConnectionError):
+        client.get_plugins()
+    with pytest.raises(QbtConnectionError):
+        client.app_version()
+
+
+def test_update_plugins_non_200_raises_api_error():
+    fake = FakeSession()
+    fake.post_map[f"{BASE}/api/v2/search/updatePlugins"] = FakeResponse(500, "err")
+    client = _authed(fake)
+    with pytest.raises(QbtApiError):
+        client.update_plugins()
+
+
+def test_enable_plugin_non_200_raises_api_error():
+    fake = FakeSession()
+    fake.post_map[f"{BASE}/api/v2/search/enablePlugin"] = FakeResponse(400, "bad")
+    client = _authed(fake)
+    with pytest.raises(QbtApiError):
+        client.enable_plugin("academictorrents", True)
 
 
 def test_install_plugin_posts_sources():

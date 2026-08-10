@@ -608,81 +608,87 @@ def run(args: argparse.Namespace) -> int:
         return EXIT_CONFIG_ERROR
 
     running_py = sys.version_info[:2]
+    # Use the resolved, concrete timeout everywhere downstream (argparse may
+    # leave args.timeout as None; config.timeout is always a positive float).
+    args.timeout = config.timeout
 
-    # ---- connect + authenticate ---- #
+    qbt: Optional[QbtClient] = None
+    catalogue_session: Optional[requests.Session] = None
     try:
-        qbt = QbtClient(config.url, timeout=config.timeout)
-        qbt.login(config.username, config.password)
-        qbt_version = qbt.app_version()
-        webapi_version = qbt.webapi_version()
-        installed = qbt.get_plugins()
-    except (QbtConnectionError, QbtAuthError, QbtSearchUnavailable) as exc:
-        logger.error("qBittorrent error: %s", exc)
-        return EXIT_QBT_ERROR
-    except QbtApiError as exc:
-        logger.error("qBittorrent API error: %s", exc)
-        return EXIT_QBT_ERROR
-
-    # ---- catalogue ---- #
-    catalogue_session = requests.Session()
-    catalogue_session.headers.update({"User-Agent": "qbt-plugin-sync/1.0"})
-    try:
-        catalogue = fetch_catalogue(
-            catalogue_session, config.catalogue_url, timeout=config.timeout
-        )
-    except (CatalogueFetchError, CatalogueParseError) as exc:
-        logger.error("Catalogue error: %s", exc)
-        qbt.close()
-        return EXIT_CATALOGUE_ERROR
-
-    # ---- reconcile + plan ---- #
-    resolutions = reconcile(catalogue, installed)
-    resolutions = apply_filters(resolutions, args.only, args.exclude)
-    plan_actions(catalogue_session, resolutions, args, running_py=running_py)
-
-    # ---- apply or dry-run ---- #
-    exit_code = EXIT_OK
-    if dry_run:
-        mark_dry_run(resolutions)
-    else:
-        if args.enable_new and not args.apply:  # pragma: no cover - guarded by dry_run
-            pass
-        apply_actions(qbt, resolutions, args)
-        if any(
-            r.result in (ActionResult.FAILED, ActionResult.VERIFY_FAILED)
-            for r in resolutions
-        ):
-            exit_code = EXIT_PARTIAL_FAILURE
-
-    # ---- output ---- #
-    if not args.quiet:
-        render_console(
-            resolutions,
-            qbt_version=qbt_version,
-            webapi_version=webapi_version,
-            installed_count=len(installed),
-            catalogue_count=len(catalogue),
-            dry_run=dry_run,
-        )
-
-    if args.json_report:
-        report = build_report(
-            qbittorrent_version=qbt_version,
-            webapi_version=webapi_version,
-            catalogue_source=config.catalogue_url,
-            dry_run=dry_run,
-            resolutions=resolutions,
-            python_version=platform.python_version(),
-        )
+        # ---- connect + authenticate ---- #
         try:
-            write_report(report, args.json_report)
-            logger.info("Wrote JSON report to %s", args.json_report)
-        except OSError as exc:
-            logger.error("Failed to write JSON report: %s", exc)
+            qbt = QbtClient(config.url, timeout=config.timeout)
+            qbt.login(config.username, config.password)
+            qbt_version = qbt.app_version()
+            webapi_version = qbt.webapi_version()
+            installed = qbt.get_plugins()
+        except (QbtConnectionError, QbtAuthError, QbtSearchUnavailable) as exc:
+            logger.error("qBittorrent error: %s", exc)
+            return EXIT_QBT_ERROR
+        except QbtApiError as exc:
+            logger.error("qBittorrent API error: %s", exc)
+            return EXIT_QBT_ERROR
 
-    qbt.close()
-    catalogue_session.close()
-    return exit_code
+        # ---- catalogue ---- #
+        catalogue_session = requests.Session()
+        catalogue_session.headers.update({"User-Agent": "qbt-plugin-sync/1.0"})
+        try:
+            catalogue = fetch_catalogue(
+                catalogue_session, config.catalogue_url, timeout=config.timeout
+            )
+        except (CatalogueFetchError, CatalogueParseError) as exc:
+            logger.error("Catalogue error: %s", exc)
+            return EXIT_CATALOGUE_ERROR
+
+        # ---- reconcile + plan ---- #
+        resolutions = reconcile(catalogue, installed)
+        resolutions = apply_filters(resolutions, args.only, args.exclude)
+        plan_actions(catalogue_session, resolutions, args, running_py=running_py)
+
+        # ---- apply or dry-run ---- #
+        exit_code = EXIT_OK
+        if dry_run:
+            mark_dry_run(resolutions)
+        else:
+            apply_actions(qbt, resolutions, args)
+            if any(
+                r.result in (ActionResult.FAILED, ActionResult.VERIFY_FAILED)
+                for r in resolutions
+            ):
+                exit_code = EXIT_PARTIAL_FAILURE
+
+        # ---- output ---- #
+        if not args.quiet:
+            render_console(
+                resolutions,
+                qbt_version=qbt_version,
+                webapi_version=webapi_version,
+                installed_count=len(installed),
+                catalogue_count=len(catalogue),
+                dry_run=dry_run,
+            )
+
+        if args.json_report:
+            report = build_report(
+                qbittorrent_version=qbt_version,
+                webapi_version=webapi_version,
+                catalogue_source=config.catalogue_url,
+                dry_run=dry_run,
+                resolutions=resolutions,
+                python_version=platform.python_version(),
+            )
+            try:
+                write_report(report, args.json_report)
+                logger.info("Wrote JSON report to %s", args.json_report)
+            except OSError as exc:
+                logger.error("Failed to write JSON report: %s", exc)
+
+        return exit_code
+    finally:
+        if qbt is not None:
+            qbt.close()
+        if catalogue_session is not None:
+            catalogue_session.close()
 
 
 def main(argv: Optional[list[str]] = None) -> int:

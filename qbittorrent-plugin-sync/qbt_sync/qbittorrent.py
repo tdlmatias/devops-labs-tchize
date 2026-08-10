@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from .httpclient import get_with_retries
+from .httpclient import DownloadError, get_with_retries
 from .logging_config import get_logger
 from .models import InstalledPlugin
 
@@ -123,9 +123,12 @@ class QbtClient:
     # ----- read-only queries (idempotent GET, with retries) ------------- #
     def _get_text(self, path: str) -> str:
         self._require_auth()
-        response = get_with_retries(
-            self.session, self._url(path), timeout=self.timeout
-        )
+        try:
+            response = get_with_retries(
+                self.session, self._url(path), timeout=self.timeout
+            )
+        except DownloadError as exc:
+            raise QbtConnectionError(f"GET {path} failed: {exc}") from exc
         if response.status_code == 403:
             raise QbtAuthError(f"GET {path} forbidden (session expired?).")
         if response.status_code == 404:
@@ -144,9 +147,12 @@ class QbtClient:
         """Return the installed search plugins."""
 
         self._require_auth()
-        response = get_with_retries(
-            self.session, self._url("/api/v2/search/plugins"), timeout=self.timeout
-        )
+        try:
+            response = get_with_retries(
+                self.session, self._url("/api/v2/search/plugins"), timeout=self.timeout
+            )
+        except DownloadError as exc:
+            raise QbtConnectionError(f"Listing plugins failed: {exc}") from exc
         if response.status_code == 404:
             raise QbtSearchUnavailable(
                 "The search plugins endpoint is unavailable; is the Search "
@@ -162,6 +168,11 @@ class QbtClient:
             payload = response.json()
         except ValueError as exc:
             raise QbtApiError("Search plugins response was not valid JSON.") from exc
+
+        if not isinstance(payload, list):
+            raise QbtApiError(
+                f"Expected a JSON array of plugins, got {type(payload).__name__}."
+            )
 
         plugins: list[InstalledPlugin] = []
         for item in payload:
