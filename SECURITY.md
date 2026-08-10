@@ -5,15 +5,11 @@
 **Please do not report security vulnerabilities through public GitHub issues,
 pull requests, or discussions.**
 
-Instead, report them privately using one of:
-
-- **GitHub Private Vulnerability Reporting** — go to the repository's
-  **Security** tab → **Report a vulnerability** (preferred).
-- A private message to the repository maintainer.
-
-> Maintainers: enable *Private vulnerability reporting* under
-> **Settings → Security → Advanced Security**, and add a dedicated security
-> contact address here if you prefer email reports.
+Instead, report them privately through **GitHub Private Vulnerability
+Reporting**: open the repository's **Security** tab and choose
+**Report a vulnerability**
+([direct link](https://github.com/tdlmatias/devops-labs-tchize/security/advisories/new)).
+This routes the report privately to the maintainers.
 
 When reporting, please include as much of the following as you can:
 

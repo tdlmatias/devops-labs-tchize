@@ -49,12 +49,10 @@ an individual is officially representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behaviour may be
-reported to the community leaders responsible for enforcement, privately via the
-repository's **Security** tab (*Report a vulnerability* also routes to
-maintainers) or by contacting the maintainer directly.
-
-> Maintainers: add a dedicated contact method (e.g. an email address) here for
-> Code of Conduct reports.
+reported privately to the maintainers through the repository's **Security** tab —
+[**Report a vulnerability**](https://github.com/tdlmatias/devops-labs-tchize/security/advisories/new)
+routes privately to the maintainers and can also be used for Code of Conduct
+reports.
 
 All complaints will be reviewed and investigated promptly and fairly. All
 community leaders are obligated to respect the privacy and security of the
