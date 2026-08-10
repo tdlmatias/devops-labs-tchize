@@ -1,0 +1,81 @@
+This is a fixture emulating the structure of the real
+Unofficial-search-plugins.mediawiki file. Only the Public Sites table should be
+parsed by the tool.
+
+== Some Intro Section ==
+
+Blah blah, this table should be ignored entirely.
+
+{|class="sortable"
+|-
+! Name
+! URL
+|-
+| Ignore Me
+| http://example.invalid
+|}
+
+== Plugins for Public Sites ==
+
+{|class="sortable"
+|-
+!  Search Engine
+!  Author (Repository)
+!  Version
+!  Last update
+!  Download link
+!  Comments
+|-
+| [[https://www.google.com/s2/favicons?domain=academictorrents.com#.png]] [https://academictorrents.com/ Academic Torrents]
+| [https://github.com/LightDestory/qBittorrent-Search-Plugins LightDestory]
+| 1.2
+| 19/Mar<br>2023
+| [https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins/master/src/engines/academictorrents.py [[https://raw.githubusercontent.com/Pireo/hello-world/master/Download.gif]]]
+| ✔ qbt 4.3.x / Python 3.8.5 <br>**READ REPOSITORY NOTES**
+|-
+| [[https://raw.githubusercontent.com/nishizhen/qBit-search-plugins/main/favicon.png]] [https://acg.rip/ acgrip]
+| [https://github.com/nishizhen/qBit-search-plugins nishizhen]
+| 2.1
+| 4/Aug<br>2026
+| [https://raw.githubusercontent.com/nishizhen/qBit-search-plugins/main/acgrip.py [[https://raw.githubusercontent.com/Pireo/hello-world/master/Download.gif]]]
+| ✔ qbt 5.0.x / Python 3.10+
+|-
+| [https://limetorrents.example/ LimeTorrents]
+| [https://github.com/someone/limetorrents-plugin someone]
+| 4.5
+| 1/Jan<br>2024
+| [https://raw.githubusercontent.com/someone/limetorrents-plugin/master/limetorrents.py [[https://raw.githubusercontent.com/Pireo/hello-world/master/Download.gif]]]
+| ❗ Broken results since site redesign
+|-
+| [https://deadsite.example/ DeadSite]
+| [https://github.com/nobody/deadsite nobody]
+| 1.0
+| 5/May<br>2019
+| [https://raw.githubusercontent.com/nobody/deadsite/master/deadsite.py [[https://raw.githubusercontent.com/Pireo/hello-world/master/Download.gif]]]
+| ✖ Site offline permanently
+|-
+| [https://noversion.example/ NoVersion]
+|
+|
+|
+| [https://raw.githubusercontent.com/x/y/master/noversion.py]
+| ✔
+|-
+| [https://nourl.example/ NoDownload]
+| [https://github.com/x/nourl x]
+| 3.0
+| 2/Feb<br>2022
+|
+| ✔ no download link available
+|}
+
+== Plugins for Private Sites ==
+
+{|class="sortable"
+|-
+!  Search Engine
+!  Version
+|-
+| [https://private.example/ PrivateOnly]
+| 9.9
+|}
