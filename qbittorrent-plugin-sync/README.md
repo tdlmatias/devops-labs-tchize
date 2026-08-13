@@ -290,8 +290,10 @@ error · `3` qBittorrent connection/auth · `4` catalogue retrieval/parsing.
 
 ```bash
 pip install -r requirements-dev.txt
-python3 -m compileall .
-pytest -v
+python3 -m compileall -q qbt_plugin_sync.py qbt_sync tests
+python3 -m ruff check qbt_plugin_sync.py qbt_sync tests
+python3 -m pytest -v --cov=qbt_sync --cov-report=term-missing
+python3 -m pip_audit -r requirements.txt
 ```
 
 Tests are fully offline: every qBittorrent mutation is mocked and **no test
@@ -300,6 +302,22 @@ detection, warning detection, URL validation, version comparison, name
 normalisation, ambiguous matching, the security scanner, authentication,
 installed-plugin retrieval, dry-run, installation verification, partial failure
 and malformed catalogue rows.
+
+GitHub Actions runs compilation and tests on Python 3.11, 3.12, and 3.13 for
+pull requests to `master`, pushes to `master`, and manual dispatches. Ruff and
+coverage run on Python 3.11. Coverage is currently reported without a minimum
+threshold while untested orchestration paths are improved.
+
+The weekly security workflow audits runtime dependencies; pull requests also
+receive dependency review where GitHub makes that feature available. CodeQL
+runs separately. These checks do not invoke `qbt_plugin_sync.py`, connect to a
+qBittorrent instance, download plugins, or use repository secrets.
+
+There is currently no automated release workflow. The repository has an
+application version but no Python distribution metadata, so tags must not be
+treated as publishable package releases. A later packaging change should add a
+build backend, metadata, console entry point, and tag/version validation before
+GitHub Release or PyPI automation is enabled.
 
 ## 17. Cleanup and uninstall
 

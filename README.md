@@ -7,6 +7,8 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![CI](https://github.com/tdlmatias/devops-labs-tchize/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/tdlmatias/devops-labs-tchize/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/tdlmatias/devops-labs-tchize/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/tdlmatias/devops-labs-tchize/actions/workflows/codeql.yml)
 
 ---
 
@@ -18,6 +20,7 @@
   - [qBittorrent Search Plugin Synchroniser](#qbittorrent-search-plugin-synchroniser)
 - [Getting started](#getting-started)
 - [Conventions](#conventions)
+- [Continuous integration and security](#continuous-integration-and-security)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [Security](#security)
@@ -130,6 +133,23 @@ Repository-wide conventions keep every project consistent:
 - **Branch naming:** `type/short-description` (e.g. `feat/...`, `fix/...`,
   `docs/...`). See [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Conventional-style commit subjects** — short, imperative mood.
+
+## Continuous integration and security
+
+Pull requests to `master`, pushes to `master`, and manual runs test
+`qbittorrent-plugin-sync` on Python 3.11, 3.12, and 3.13. CI compiles the
+sources, runs the complete offline test suite, and runs Ruff plus coverage on
+Python 3.11. The workflow never starts qBittorrent, executes downloaded plugin
+code, or uses repository secrets.
+
+Separate workflows run CodeQL and audit Python dependencies. Pull requests also
+use GitHub's dependency review when that feature is available for the
+repository. Dependabot proposes controlled weekly updates for Python packages
+and GitHub Actions; updates are never merged automatically.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md#local-ci-equivalent) for local commands
+and the [project README](qbittorrent-plugin-sync/README.md#16-development--testing)
+for troubleshooting.
 
 ## Documentation
 

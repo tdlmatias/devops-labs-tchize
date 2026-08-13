@@ -112,6 +112,34 @@ pytest -v
 All tests must pass before a pull request is merged. New code should come with
 new tests.
 
+### Local CI equivalent
+
+For `qbittorrent-plugin-sync`, run the required CI checks from its directory:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python -m compileall -q qbt_plugin_sync.py qbt_sync tests
+python -m ruff check qbt_plugin_sync.py qbt_sync tests
+python -m pytest -v --cov=qbt_sync --cov-report=term-missing
+python -m pip_audit -r requirements.txt
+```
+
+CI repeats compilation and the offline tests on Python 3.11, 3.12, and 3.13.
+Ruff, coverage, and dependency audit run once to avoid duplicate work. Coverage
+is reported as a baseline; no arbitrary minimum is currently enforced.
+
+Common failures:
+
+- Dependency installation: recreate `.venv` and confirm the requirements files
+  are valid and reachable.
+- Ruff: run the displayed command and address the specific diagnostic; do not
+  suppress a meaningful finding merely to pass CI.
+- Tests: reproduce using the Python version named by the failed matrix job.
+- Dependency audit: review the advisory and update the affected direct or
+  transitive dependency; do not use `continue-on-error` or blanket ignores.
+
 ## Pull requests
 
 - Target the `master` branch.
@@ -121,6 +149,16 @@ new tests.
 - Ensure `compileall`/`pytest` (or the project's equivalent checks) pass.
 - Update the relevant `README.md` and [CHANGELOG.md](CHANGELOG.md) when your
   change is user-visible.
+
+Maintainers should protect `master` by requiring pull requests, at least one
+approval, dismissal of stale approvals, resolved conversations, an up-to-date
+branch, and all `Test (Python 3.11)`, `Test (Python 3.12)`, and
+`Test (Python 3.13)` checks. Force pushes and branch deletion should be blocked,
+and direct pushes should be restricted. Dependency review can be required once
+repository eligibility is confirmed; CodeQL and the scheduled dependency audit
+may remain informational initially. Signed commits improve provenance but add
+contributor setup and recovery overhead, so enforce them only if maintainers can
+apply the policy consistently.
 
 ## Adding a new project
 
