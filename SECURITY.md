@@ -69,9 +69,9 @@ and rotate the credential immediately.
 
 ## Automated security checks
 
-- CodeQL analyzes Python changes on pull requests and `master`, and on a weekly
-  schedule. It requires GitHub code scanning to be available and enabled for
-  the repository.
+- CodeQL, via GitHub's default code scanning setup, analyzes Python changes on
+  pull requests and `master`, and on a weekly schedule. It requires GitHub code
+  scanning to be available and enabled for the repository.
 - `pip-audit` checks resolved runtime dependencies against public vulnerability
   data. It does not run the application.
 - GitHub dependency review blocks newly introduced high-severity vulnerable

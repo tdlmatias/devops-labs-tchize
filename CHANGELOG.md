@@ -12,8 +12,9 @@ Individual projects may additionally maintain their own history in their READMEs
 ### Added
 - GitHub Actions CI for Python 3.11, 3.12, and 3.13 with offline tests,
   compilation, focused Ruff linting, and baseline coverage reporting.
-- Separate CodeQL, dependency-review, and Python dependency-audit automation,
-  plus grouped weekly Dependabot updates for Python and GitHub Actions.
+- Dependency-review and Python dependency-audit automation (with CodeQL via
+  GitHub's default code scanning setup), plus grouped weekly Dependabot updates
+  for Python and GitHub Actions.
 - Contributor and security documentation for local CI reproduction, branch
   protection, workflow troubleshooting, and current release limitations.
 - Repository-wide documentation set following common open-source best practices:

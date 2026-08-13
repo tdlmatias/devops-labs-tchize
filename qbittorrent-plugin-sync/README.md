@@ -310,7 +310,8 @@ threshold while untested orchestration paths are improved.
 
 The weekly security workflow audits runtime dependencies; pull requests also
 receive dependency review where GitHub makes that feature available. CodeQL
-runs separately. These checks do not invoke `qbt_plugin_sync.py`, connect to a
+runs through GitHub's default code scanning setup. These checks do not invoke
+`qbt_plugin_sync.py`, connect to a
 qBittorrent instance, download plugins, or use repository secrets.
 
 There is currently no automated release workflow. The repository has an

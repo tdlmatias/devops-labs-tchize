@@ -123,8 +123,9 @@ README's *Development / testing* section.
 Required CI uses a Python 3.11–3.13 matrix and runs entirely within the project
 directory. Compilation and offline tests run on every supported version; Ruff
 and coverage run once on Python 3.11. Security automation is separated into
-CodeQL, dependency review, and a runtime dependency audit so repository feature
-availability does not obscure the core test signal. No workflow executes the
+CodeQL (GitHub's default code scanning setup), dependency review, and a runtime
+dependency audit so repository feature availability does not obscure the core
+test signal. No workflow executes the
 CLI, downloads plugin source, supplies credentials, or contacts qBittorrent.
 
 The project is currently source-run rather than packaged: there is no build
