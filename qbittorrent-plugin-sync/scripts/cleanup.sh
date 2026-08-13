@@ -6,17 +6,18 @@
 # it would remove. Pass --yes (or -y) to actually delete. This mirrors the
 # tool's own dry-run-by-default philosophy.
 #
-# It removes LOCAL artefacts only:
-#   - Python byte-code caches (__pycache__)
+# It removes LOCAL artefacts only, and only at their default names/locations:
+#   - Python bytecode caches (__pycache__)
 #   - the pytest cache (.pytest_cache)
 #   - a local virtual environment (.venv)
-#   - generated reports (qbt-plugin-report.json)
-#   - generated logs (*.log and rotated *.log.N)
-#   - a local .env file (contains credentials — you are asked to confirm)
+#   - a report at the conventional name (qbt-plugin-report.json)
+#   - logs in the project tree (*.log and rotated *.log.N)
+#   - a local .env file (contains credentials — removed only with --include-env)
 #
 # It does NOT touch qBittorrent, scheduled systemd/cron jobs, /var/log, or any
-# system-wide files. See the "Cleanup and uninstall" section of README.md for
-# those steps.
+# system-wide files. If you pointed --json-report or --log-file at a custom
+# path (or a location outside this project), remove those files yourself. See
+# the "Cleanup and uninstall" section of README.md for those steps.
 
 set -euo pipefail
 
@@ -66,10 +67,12 @@ for path in .pytest_cache .venv qbt-plugin-report.json; do
     [ -e "$path" ] && targets+=("$path")
 done
 
-# Log files (including rotated .1/.2/.3), if any.
+# Log files (including rotated .1/.2/.3), if any. Rotated files are restricted
+# to numeric suffixes so we never match archives/backups like "app.log.tar.gz"
+# or "app.log.bak".
 while IFS= read -r -d '' f; do
     targets+=("$f")
-done < <(find . -maxdepth 2 -type f \( -name '*.log' -o -name '*.log.*' \) -print0 2>/dev/null)
+done < <(find . -maxdepth 2 -type f \( -name '*.log' -o -name '*.log.[0-9]*' \) -print0 2>/dev/null)
 
 # .env is only included when explicitly requested (it holds credentials).
 if [ "$REMOVE_ENV" -eq 1 ] && [ -e ".env" ]; then

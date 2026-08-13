@@ -341,10 +341,14 @@ bash scripts/cleanup.sh            # dry run — shows what would be removed
 bash scripts/cleanup.sh --yes      # actually remove local artefacts
 ```
 
+The helper only knows the **default** artefact names/locations. If you pointed
+`--json-report` or `--log-file` at a custom path (or anywhere outside the
+project tree), remove those files yourself — see the manual commands below.
+
 Or do it by hand:
 
 ```bash
-# Byte-code and test caches
+# Bytecode and test caches
 find . -type d -name '__pycache__' -exec rm -rf {} +
 rm -rf .pytest_cache
 
