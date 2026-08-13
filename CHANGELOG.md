@@ -14,6 +14,11 @@ Individual projects may additionally maintain their own history in their READMEs
   a comprehensive root `README.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`,
   `SECURITY.md`, this `CHANGELOG.md`, `docs/ARCHITECTURE.md`, and GitHub issue
   and pull-request templates under `.github/`.
+- **`qbittorrent-plugin-sync`:** a "Cleanup and uninstall" section in the
+  project README covering local artefacts, credential clearing, scheduled-
+  automation teardown, reverting qBittorrent plugin installs, and full
+  uninstall — plus a safe-by-default `scripts/cleanup.sh` helper (dry run
+  unless `--yes`).
 
 ## [2026-08-10]
 

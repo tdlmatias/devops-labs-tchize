@@ -301,6 +301,132 @@ normalisation, ambiguous matching, the security scanner, authentication,
 installed-plugin retrieval, dry-run, installation verification, partial failure
 and malformed catalogue rows.
 
+## 17. Cleanup and uninstall
+
+This tool is deliberately light-footed, but a full run (and especially the
+scheduled-automation setup) can leave a few artefacts on your machine. This
+section explains exactly what may be left behind and how to remove it.
+
+> **Important:** cleanup here means removing *this tool's own* files, caches,
+> logs, and credentials. It does **not** remove the search plugins the tool
+> installed **inside qBittorrent** — those live in qBittorrent and keep working.
+> See [Reverting qBittorrent plugin changes](#reverting-qbittorrent-plugin-changes)
+> if you also want to undo the plugin installs.
+
+### What the tool leaves behind
+
+| Artefact | When it is created | Location (default) |
+| -------- | ------------------ | ------------------ |
+| Candidate plugin source | Only in memory during inspection | *nothing on disk* |
+| JSON report | With `--json-report PATH` | the path you gave |
+| Log file (rotating) | With `--log-file PATH` | the path you gave (`*.log`, plus `.1`/`.2`/`.3`) |
+| Python bytecode cache | On any run | `qbt_sync/__pycache__/`, `tests/__pycache__/` |
+| Virtual environment | If you created one | `.venv/` |
+| pytest cache | After running tests | `.pytest_cache/` |
+| Environment variables | If you exported them | your shell session (`QBT_URL`, `QBT_USERNAME`, `QBT_PASSWORD`, `QBT_TIMEOUT`) |
+| `.env` file | If you created one | `qbittorrent-plugin-sync/.env` (git-ignored) |
+
+Plugin sources are downloaded into memory only — the tool never writes plugin
+`.py` files to a temporary directory, so there is no scratch/temp state to clear.
+
+### Local (one-off run) cleanup
+
+A helper script is provided that is **safe by default** (it prints what it would
+remove and does nothing unless you pass `--yes`), mirroring the tool's own
+dry-run philosophy:
+
+```bash
+# From the project directory:
+bash scripts/cleanup.sh            # dry run — shows what would be removed
+bash scripts/cleanup.sh --yes      # actually remove local artefacts
+```
+
+Or do it by hand:
+
+```bash
+# Byte-code and test caches
+find . -type d -name '__pycache__' -exec rm -rf {} +
+rm -rf .pytest_cache
+
+# Virtual environment
+rm -rf .venv
+
+# Reports and logs you generated (adjust paths to what you used)
+rm -f qbt-plugin-report.json
+rm -f qbt-plugin-sync.log qbt-plugin-sync.log.*
+```
+
+### Clear credentials from your environment
+
+The password is the most sensitive artefact. Remove it from your shell and
+delete any local `.env`:
+
+```bash
+# Unset for the current shell session
+unset QBT_PASSWORD QBT_USERNAME QBT_URL QBT_TIMEOUT
+
+# Remove a local .env if you created one
+rm -f .env
+```
+
+If you exported these in a shell profile (`~/.bashrc`, `~/.profile`, …), edit
+that file to remove the lines as well. If the password was ever typed on a
+command line or stored in history, clear it:
+
+```bash
+history -d <line-number>     # or trim ~/.bash_history, then: history -c
+```
+
+### Scheduled automation cleanup
+
+If you followed [§14](#14-cron--systemd-examples) to run the tool on a schedule,
+remove those pieces too.
+
+**systemd timer + service:**
+
+```bash
+sudo systemctl disable --now qbt-plugin-sync.timer
+sudo rm -f /etc/systemd/system/qbt-plugin-sync.timer \
+           /etc/systemd/system/qbt-plugin-sync.service
+sudo systemctl daemon-reload
+```
+
+**cron entry:** remove the line you added with `crontab -e` (or `sudo crontab -e`).
+
+**Log directory and the credentials env file** (the env file contains your
+password — remove it securely):
+
+```bash
+sudo rm -rf /var/log/qbt-plugin-sync/
+sudo shred -u /etc/qbt-plugin-sync.env   # or: sudo rm -f /etc/qbt-plugin-sync.env
+```
+
+### Reverting qBittorrent plugin changes
+
+The tool never uninstalls plugins, so undoing installs is a manual, deliberate
+step. Use the JSON report to see exactly what was installed
+(`action_attempted: "INSTALL"`, `result: "SUCCESS"`), then in qBittorrent:
+
+> **View → Search Engine** (enable the Search tab) **→ Search plugins…** →
+> right-click a plugin → **Uninstall**.
+
+Only remove plugins you intended to; leave anything reported as `LOCAL_ONLY`
+(plugins that were already there and are not part of this catalogue).
+
+### Full uninstall
+
+To remove the tool entirely, delete its directory (after the automation and
+credential cleanup above):
+
+```bash
+cd ..
+rm -rf qbittorrent-plugin-sync
+```
+
+No system-wide packages are installed by the tool itself; if you installed the
+Python dependencies into a global environment rather than a `.venv`, uninstall
+them with `pip uninstall requests packaging` (only if nothing else needs them).
+
 ---
 
 ### Design guarantees
