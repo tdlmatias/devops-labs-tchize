@@ -15,7 +15,7 @@ from urllib.parse import urljoin
 import requests
 
 from .logging_config import get_logger
-from .security import UrlValidationError, validate_url
+from .security import validate_url
 
 logger = get_logger()
 

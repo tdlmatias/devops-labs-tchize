@@ -7,8 +7,6 @@ from __future__ import annotations
 
 import argparse
 
-import pytest
-
 from qbt_sync import cli
 from qbt_sync.models import (
     ActionResult,

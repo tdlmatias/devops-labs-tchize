@@ -66,3 +66,20 @@ Across this repository:
 
 If you discover a committed secret, treat it as compromised: report it privately,
 and rotate the credential immediately.
+
+## Automated security checks
+
+- CodeQL, via GitHub's default code scanning setup, analyzes Python changes on
+  pull requests and `master`, and on a weekly schedule. It requires GitHub code
+  scanning to be available and enabled for the repository.
+- `pip-audit` checks resolved runtime dependencies against public vulnerability
+  data. It does not run the application.
+- GitHub dependency review blocks newly introduced high-severity vulnerable
+  dependencies on pull requests when the repository is eligible for the
+  feature.
+- Dependabot proposes weekly Python and GitHub Actions updates. No update is
+  automatically merged.
+
+Maintainers should also enable GitHub secret scanning and push protection where
+available. CI workflows receive no qBittorrent credentials and must never run
+the synchroniser against a live service.

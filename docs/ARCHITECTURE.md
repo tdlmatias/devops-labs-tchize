@@ -118,6 +118,20 @@ session, catalogue parsing runs against a fixture, and every mutation is mocked 
 no test installs a real plugin or touches a live qBittorrent. See the project
 README's *Development / testing* section.
 
+#### Automation model
+
+Required CI uses a Python 3.11–3.13 matrix and runs entirely within the project
+directory. Compilation and offline tests run on every supported version; Ruff
+and coverage run once on Python 3.11. Security automation is separated into
+CodeQL (GitHub's default code scanning setup), dependency review, and a runtime
+dependency audit so repository feature availability does not obscure the core
+test signal. No workflow executes the
+CLI, downloads plugin source, supplies credentials, or contacts qBittorrent.
+
+The project is currently source-run rather than packaged: there is no build
+backend or distribution metadata. Tag-driven GitHub/PyPI release automation is
+therefore intentionally deferred until a separate packaging design is approved.
+
 ---
 
 ## Adding a project
