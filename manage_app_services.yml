@@ -1,0 +1,18 @@
+---
+# Task list: set the given application services to a desired state.
+#
+# Parameters (passed by the including task via `vars`):
+#   app_services : list of service names to manage (may be empty -> no-op)
+#   app_state    : desired service state, e.g. "started" or "stopped"
+#
+# Included by reboot_Application.yml for both the frontend and backend groups,
+# replacing the previous per-role stop/start task files. The service lists
+# (frontend_services / backend_services) default to empty in group_vars, so
+# this is a harmless no-op until they are populated with real service names.
+- name: "Set application services to '{{ app_state }}'"
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: "{{ app_state }}"
+  loop: "{{ app_services }}"
+  loop_control:
+    label: "{{ item }} -> {{ app_state }}"

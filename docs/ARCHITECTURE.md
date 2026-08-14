@@ -167,12 +167,13 @@ multi-NIC hosts.
 | `Vagrantfile` | VM definitions, networking, and the bootstrap provisioner. |
 | `Vagrantfile_back` | A loop-based alternative Vagrant configuration kept for reference. |
 | `scripts/updateCentos.sh` | Idempotent VM bootstrap; runs as root under the Vagrant provisioner (no `sudo`), with `set -euo pipefail`. |
-| `group_vars/all.yml` | Shared vars (`userBox`, environment names, private-key paths). Paths derive from `playbook_dir` rather than a hardcoded absolute path; the directory follows Ansible's standard `group_vars/` name so vars auto-load. |
-| `inventories/hosts/hosts` | Static INI inventory: `instance_group`, `tower`, and `workernodes`. Private-key paths are plain relative paths under `.vagrant/machines/<name>/` (INI inventories are not Jinja-templated). |
+| `group_vars/all.yml` | Shared vars (`userBox`, environment names, private-key paths, and the `frontend_services` / `backend_services` service lists). Paths derive from `playbook_dir` rather than a hardcoded absolute path; the directory follows Ansible's standard `group_vars/` name so vars auto-load. |
+| `inventories/hosts/hosts` | Static INI inventory: `instance_group`, `tower`, `workernodes`, plus the role groups `frontend` (`deploy_env1`) and `backend` (`deploy_env2`). Private-key paths are plain relative paths under `.vagrant/machines/<name>/` (INI inventories are not Jinja-templated); the role groups reuse the connection vars declared on the hosts. |
 | `towerinstall.yml` | Installs EPEL + Ansible, downloads and unpacks the Tower setup tarball under `/opt`, and runs `setup.sh`. Targets the `tower` group and escalates to root (`become`), since the package and `/opt` steps require root. |
 | `test_connection.yml` | Connectivity smoke test using `ansible.builtin.ping` against `instance_group`. |
-| `reboot_Application.yml` | Application-aware reboot workflow. |
+| `reboot_Application.yml` | Application-aware reboot workflow (see below). |
 | `reboot_Application-v2.yml` | Rolling-reboot variant. |
+| `manage_app_services.yml` | Single parameterized task list (`include_tasks`) taking `app_services` (a service-name list) and `app_state` (`started`/`stopped`); reused for both frontend and backend by passing the relevant `*_services` list. |
 
 #### Reboot orchestration
 
@@ -181,19 +182,23 @@ Two complementary approaches to rebooting application hosts are provided:
 - **`reboot_Application.yml`** classifies hosts by **inventory group
   membership** (`'frontend' in group_names` / `'backend' in group_names`)
   rather than deriving a role at runtime. It stops the relevant application,
-  reboots via `ansible.builtin.reboot`, and starts it again, using
-  `include_tasks` for the per-application steps.
+  reboots via `ansible.builtin.reboot`, and starts it again. All four
+  stop/start steps `include_tasks: manage_app_services.yml`, passing
+  `app_services` (`frontend_services` or `backend_services`) and `app_state`
+  (`stopped`/`started`) as vars — one parameterized task file instead of four
+  near-identical ones. Both service lists default to empty, so the stop/start
+  steps are no-ops until populated with real service names.
 
 ```mermaid
 flowchart TD
     A[Play: hosts all, become] --> B{in group_names?}
-    B -- frontend --> C[include_tasks stop_Application.yml]
-    B -- backend --> D[include_tasks stop_backend_apps.yml]
+    B -- frontend --> C["manage_app_services.yml<br/>(frontend_services, stopped)"]
+    B -- backend --> D["manage_app_services.yml<br/>(backend_services, stopped)"]
     C --> E[reboot module]
     D --> E
     E --> F{in group_names?}
-    F -- frontend --> G[include_tasks start_Application.yml]
-    F -- backend --> H[include_tasks start_backend_apps.yml]
+    F -- frontend --> G["manage_app_services.yml<br/>(frontend_services, started)"]
+    F -- backend --> H["manage_app_services.yml<br/>(backend_services, started)"]
 ```
 
 - **`reboot_Application-v2.yml`** takes a fleet-availability angle: `serial: 1`
@@ -204,14 +209,16 @@ flowchart TD
 
 #### Status and caveats
 
-This is a **learning scaffold**, not a hardened deployment:
+This is a **learning lab**, not a hardened deployment:
 
-- The per-application `stop_*` / `start_*` task files referenced by
-  `reboot_Application.yml`, and the `frontend` / `backend` inventory groups it
-  keys on, are **placeholders** for future work — that playbook is illustrative
-  rather than runnable end to end today.
-- There is no CI for the lab; it is validated manually (YAML/INI parsing, shell
-  and Ruby syntax) rather than by an automated suite.
+- The reboot workflow is wired up end to end: the `stop_*` / `start_*` task
+  files exist and the `frontend` / `backend` inventory groups are defined, so
+  `reboot_Application.yml` runs against the lab VMs. The service lists it acts
+  on default to empty, so populate `frontend_services` / `backend_services`
+  before it will actually stop and start applications.
+- There is no CI for the lab; it is validated manually (`ansible-playbook
+  --syntax-check`, `ansible-inventory --graph`, and YAML/INI/shell/Ruby syntax)
+  rather than by an automated suite.
 
 ---
 
