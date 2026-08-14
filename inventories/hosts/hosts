@@ -1,11 +1,19 @@
+# Static inventory for the Vagrant lab.
+#
+# Private key paths are relative to the Vagrant project root (this repo),
+# where `vagrant up` writes them under .vagrant/machines/<name>/. INI
+# inventories are not Jinja-templated, so use plain relative paths here
+# rather than `{{ ... }}` variables. Run ansible from the project root, or
+# override with `-e` / `--private-key` if you invoke it from elsewhere.
+
 [instance_group]
-192.168.1.245   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/{{ projectPath }}/.vagrant/machines/ansible_tower/virtualbox/private_key
-192.168.1.246   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/{{ projectPath }}/.vagrant/machines/deploy_env1/virtualbox/private_key
-192.168.1.247   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/LabDev/Ansible-LabEnv/.vagrant/machines/deploy_env2/virtualbox/private_key
+192.168.1.245   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/ansible_tower/virtualbox/private_key
+192.168.1.246   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env1/virtualbox/private_key
+192.168.1.247   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env2/virtualbox/private_key
 
 [tower]
-192.168.1.245   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/{{ projectPath }}/.vagrant/machines/ansible_tower/virtualbox/private_key
+192.168.1.245   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/ansible_tower/virtualbox/private_key
 
 [workernodes]
-192.168.1.246   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/{{ projectPath }}/.vagrant/machines/deploy_env1/virtualbox/private_key
-192.168.1.247   ansible_user=vagrant ansible_ssh_private_key_file=/{{ homePath }}/{{ userName }}/{{ projectPath }}/.vagrant/machines/deploy_env2/virtualbox/private_key
+192.168.1.246   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env1/virtualbox/private_key
+192.168.1.247   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env2/virtualbox/private_key
