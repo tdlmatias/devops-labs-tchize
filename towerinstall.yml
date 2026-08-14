@@ -1,7 +1,7 @@
 ---
 - hosts: tower
   gather_facts: True
-  become_user: {{ userBox }}
+  become_user: "{{ userBox }}"
   become: yes
 
   tasks:
