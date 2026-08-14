@@ -1,0 +1,23 @@
+---
+# Rolling reboot of the application servers (v2).
+#
+# Alternative to reboot_Application.yml: instead of orchestrating external
+# stop/start task files, this variant reboots the hosts one at a time
+# (serial: 1) and waits for each to come back and pass a basic health check
+# before moving on, so the fleet is never fully down at once.
+- name: Rolling reboot of application servers
+  hosts: all
+  become: true
+  serial: 1
+  tasks:
+    - name: Reboot the server and wait for it to come back
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+
+    - name: Wait for SSH to be available again
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 300
+
+    - name: Confirm the host is responsive
+      ansible.builtin.ping:

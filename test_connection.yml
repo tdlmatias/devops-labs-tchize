@@ -1,0 +1,6 @@
+---
+- name: Test Ansible Connection to Servers
+  hosts: instance_group
+  tasks:
+    - name: Test connectivity with ping module
+      ansible.builtin.ping:

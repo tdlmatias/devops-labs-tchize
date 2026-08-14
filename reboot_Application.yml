@@ -1,0 +1,33 @@
+---
+# Reboot orchestration for application servers.
+#
+# Hosts are classified by their inventory group membership rather than by
+# trying to derive a role at runtime:
+#   - hosts in the "frontend" group run the frontend application
+#   - hosts in the "backend" group run the backend application
+#
+# For each host we stop the relevant application, reboot the server, and then
+# start the application again.
+- name: Reboot application servers
+  hosts: all
+  become: true
+  tasks:
+    - name: Stop frontend application
+      ansible.builtin.include_tasks: stop_Application.yml
+      when: "'frontend' in group_names"
+
+    - name: Stop backend application
+      ansible.builtin.include_tasks: stop_backend_apps.yml
+      when: "'backend' in group_names"
+
+    - name: Reboot server after applications were stopped
+      ansible.builtin.reboot:
+      when: "'frontend' in group_names or 'backend' in group_names"
+
+    - name: Start frontend application
+      ansible.builtin.include_tasks: start_Application.yml
+      when: "'frontend' in group_names"
+
+    - name: Start backend application
+      ansible.builtin.include_tasks: start_backend_apps.yml
+      when: "'backend' in group_names"
