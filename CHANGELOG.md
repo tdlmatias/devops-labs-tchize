@@ -10,6 +10,16 @@ Individual projects may additionally maintain their own history in their READMEs
 ## [Unreleased]
 
 ### Added
+- **Ansible / Vagrant lab:** a local multi-VM CentOS 8 environment
+  (`Vagrantfile`) provisioning an Ansible Tower control node and two deployment
+  targets, with playbooks for installing Tower (`towerinstall.yml`), checking
+  connectivity (`test_connection.yml`), and orchestrating application-aware
+  reboots (`reboot_Application.yml` and a rolling-reboot `reboot_Application-v2.yml`),
+  plus shared `group_vars`, a static inventory, and a `dnf`-based VM bootstrap
+  script.
+- Documentation for the Ansible / Vagrant lab: a Projects entry and section in
+  the root `README.md` and a design section in `docs/ARCHITECTURE.md` covering
+  topology, file layout, and the reboot-orchestration approaches.
 - GitHub Actions CI for Python 3.11, 3.12, and 3.13 with offline tests,
   compilation, focused Ruff linting, and baseline coverage reporting.
 - Dependency-review and Python dependency-audit automation (with CodeQL via
