@@ -1,34 +1,33 @@
 ---
-- hosts: all
+# Reboot orchestration for application servers.
+#
+# Hosts are classified by their inventory group membership rather than by
+# trying to derive a role at runtime:
+#   - hosts in the "frontend" group run the frontend application
+#   - hosts in the "backend" group run the backend application
+#
+# For each host we stop the relevant application, reboot the server, and then
+# start the application again.
+- name: Reboot application servers
+  hosts: all
   become: true
   tasks:
-    - name: Identify server role (wase or backend)
-      set_fact:
-        server_role: "{{ groups | difference(inventory_hostname) | first }}"
+    - name: Stop frontend application
+      ansible.builtin.include_tasks: stop_Application.yml
+      when: "'frontend' in group_names"
 
-    - block:
-        - name: Stop applications (Frontend only)
-          include: stop_Application.yml
-          when: server_role == "wase"
-          register: stop_apps
+    - name: Stop backend application
+      ansible.builtin.include_tasks: stop_backend_apps.yml
+      when: "'backend' in group_names"
 
-        - name: Stop applications (backend only)
-          include: stop_Application.yml
-          when: server_role == "backend"
-          register: stop_backend_apps
-      delegate_to: "{{ inventory_hostname }}"
-    
-    - name: Reboot server (conditional)
-      include: reboot_server.yml
-      when: (server_role == "wase" and stop_apps.rc == 0) or (server_role ==
-        "backend" and stop_backend_apps.rc == 0)
+    - name: Reboot server after applications were stopped
+      ansible.builtin.reboot:
+      when: "'frontend' in group_names or 'backend' in group_names"
 
-    - block:
-        - name: Start applications (frontend only)
-          include: start_Application.yml
-          when: server_role == "frontend"0-
-        - name: Start applications (backend only)
-          include: start_backend_apps.yml
-          when: server_role == "backend"
-      delegate_to: "{{ inventory_hostname }}"
+    - name: Start frontend application
+      ansible.builtin.include_tasks: start_Application.yml
+      when: "'frontend' in group_names"
 
+    - name: Start backend application
+      ansible.builtin.include_tasks: start_backend_apps.yml
+      when: "'backend' in group_names"
