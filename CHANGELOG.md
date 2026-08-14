@@ -11,12 +11,12 @@ Individual projects may additionally maintain their own history in their READMEs
 
 ### Added
 - **Ansible / Vagrant lab:** complete the `reboot_Application.yml` workflow —
-  add the `stop_Application.yml`, `start_Application.yml`, `stop_backend_apps.yml`,
-  and `start_backend_apps.yml` task files it includes, the `frontend` /
-  `backend` inventory groups it keys on, and the `frontend_services` /
-  `backend_services` variables (empty by default, so stop/start steps are
-  no-ops until populated). The playbook now passes `ansible-playbook
-  --syntax-check` and runs end to end against the lab VMs.
+  add a single parameterized `manage_app_services.yml` task file (taking
+  `app_services` + `app_state`) that the playbook includes for both frontend
+  and backend, the `frontend` / `backend` inventory groups it keys on, and the
+  `frontend_services` / `backend_services` variables (empty by default, so
+  stop/start steps are no-ops until populated). The playbook now passes
+  `ansible-playbook --syntax-check` and runs end to end against the lab VMs.
 
 ### Fixed
 - **Ansible / Vagrant lab:** align `inventories/hosts/hosts` with the

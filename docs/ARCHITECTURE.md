@@ -173,8 +173,7 @@ multi-NIC hosts.
 | `test_connection.yml` | Connectivity smoke test using `ansible.builtin.ping` against `instance_group`. |
 | `reboot_Application.yml` | Application-aware reboot workflow (see below). |
 | `reboot_Application-v2.yml` | Rolling-reboot variant. |
-| `stop_Application.yml` / `start_Application.yml` | Task lists (`include_tasks`) that stop / start `frontend_services` on `frontend` hosts. |
-| `stop_backend_apps.yml` / `start_backend_apps.yml` | Task lists (`include_tasks`) that stop / start `backend_services` on `backend` hosts. |
+| `manage_app_services.yml` | Single parameterized task list (`include_tasks`) taking `app_services` (a service-name list) and `app_state` (`started`/`stopped`); reused for both frontend and backend by passing the relevant `*_services` list. |
 
 #### Reboot orchestration
 
@@ -183,23 +182,23 @@ Two complementary approaches to rebooting application hosts are provided:
 - **`reboot_Application.yml`** classifies hosts by **inventory group
   membership** (`'frontend' in group_names` / `'backend' in group_names`)
   rather than deriving a role at runtime. It stops the relevant application,
-  reboots via `ansible.builtin.reboot`, and starts it again, using
-  `include_tasks` for the per-application steps. Those task files
-  (`stop_Application.yml`, `start_Application.yml`, `stop_backend_apps.yml`,
-  `start_backend_apps.yml`) manage the services named in `frontend_services` /
-  `backend_services`; both lists default to empty, so the stop/start steps are
-  no-ops until populated with real service names.
+  reboots via `ansible.builtin.reboot`, and starts it again. All four
+  stop/start steps `include_tasks: manage_app_services.yml`, passing
+  `app_services` (`frontend_services` or `backend_services`) and `app_state`
+  (`stopped`/`started`) as vars — one parameterized task file instead of four
+  near-identical ones. Both service lists default to empty, so the stop/start
+  steps are no-ops until populated with real service names.
 
 ```mermaid
 flowchart TD
     A[Play: hosts all, become] --> B{in group_names?}
-    B -- frontend --> C[include_tasks stop_Application.yml]
-    B -- backend --> D[include_tasks stop_backend_apps.yml]
+    B -- frontend --> C["manage_app_services.yml<br/>(frontend_services, stopped)"]
+    B -- backend --> D["manage_app_services.yml<br/>(backend_services, stopped)"]
     C --> E[reboot module]
     D --> E
     E --> F{in group_names?}
-    F -- frontend --> G[include_tasks start_Application.yml]
-    F -- backend --> H[include_tasks start_backend_apps.yml]
+    F -- frontend --> G["manage_app_services.yml<br/>(frontend_services, started)"]
+    F -- backend --> H["manage_app_services.yml<br/>(backend_services, started)"]
 ```
 
 - **`reboot_Application-v2.yml`** takes a fleet-availability angle: `serial: 1`

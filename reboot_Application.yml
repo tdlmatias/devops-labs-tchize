@@ -13,11 +13,17 @@
   become: true
   tasks:
     - name: Stop frontend application
-      ansible.builtin.include_tasks: stop_Application.yml
+      ansible.builtin.include_tasks: manage_app_services.yml
+      vars:
+        app_services: "{{ frontend_services }}"
+        app_state: stopped
       when: "'frontend' in group_names"
 
     - name: Stop backend application
-      ansible.builtin.include_tasks: stop_backend_apps.yml
+      ansible.builtin.include_tasks: manage_app_services.yml
+      vars:
+        app_services: "{{ backend_services }}"
+        app_state: stopped
       when: "'backend' in group_names"
 
     - name: Reboot server after applications were stopped
@@ -25,9 +31,15 @@
       when: "'frontend' in group_names or 'backend' in group_names"
 
     - name: Start frontend application
-      ansible.builtin.include_tasks: start_Application.yml
+      ansible.builtin.include_tasks: manage_app_services.yml
+      vars:
+        app_services: "{{ frontend_services }}"
+        app_state: started
       when: "'frontend' in group_names"
 
     - name: Start backend application
-      ansible.builtin.include_tasks: start_backend_apps.yml
+      ansible.builtin.include_tasks: manage_app_services.yml
+      vars:
+        app_services: "{{ backend_services }}"
+        app_state: started
       when: "'backend' in group_names"

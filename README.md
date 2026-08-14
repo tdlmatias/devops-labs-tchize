@@ -71,10 +71,7 @@ devops-labs-tchize/
 ├── test_connection.yml           #   ↳ playbook: connectivity check (ping)
 ├── reboot_Application.yml        #   ↳ playbook: group-based reboot workflow
 ├── reboot_Application-v2.yml     #   ↳ playbook: rolling-reboot variant
-├── stop_Application.yml          #   ↳ tasks: stop frontend app services
-├── start_Application.yml         #   ↳ tasks: start frontend app services
-├── stop_backend_apps.yml         #   ↳ tasks: stop backend app services
-└── start_backend_apps.yml        #   ↳ tasks: start backend app services
+└── manage_app_services.yml       #   ↳ tasks: start/stop app services (parameterized)
 ```
 
 Each project directory is the source of truth for that project's own setup,
@@ -139,10 +136,9 @@ orchestrate application-aware reboots.
 | `inventories/hosts/hosts` | Static inventory grouping the hosts into `instance_group`, `tower`, `workernodes`, and the role groups `frontend` (`deploy_env1`) and `backend` (`deploy_env2`), with per-host private keys. |
 | `towerinstall.yml` | Installs EPEL and Ansible, downloads the Ansible Tower setup tarball, unpacks it under `/opt`, and runs the installer. |
 | `test_connection.yml` | Pings the `instance_group` hosts to confirm connectivity. |
-| `reboot_Application.yml` | Reboot orchestration keyed on inventory group membership (`frontend` / `backend`): stop → reboot → start, via the `include_tasks` files below. |
+| `reboot_Application.yml` | Reboot orchestration keyed on inventory group membership (`frontend` / `backend`): stop → reboot → start, via the parameterized task file below. |
 | `reboot_Application-v2.yml` | Alternative rolling reboot (`serial: 1`) that reboots hosts one at a time and health-checks each before continuing. |
-| `stop_Application.yml` / `start_Application.yml` | Task lists that stop / start the frontend services (`frontend_services`) on `frontend` hosts. |
-| `stop_backend_apps.yml` / `start_backend_apps.yml` | Task lists that stop / start the backend services (`backend_services`) on `backend` hosts. |
+| `manage_app_services.yml` | Single parameterized task list (`include_tasks` with `app_services` + `app_state` vars) that sets the given services to `started`/`stopped`; used for both frontend and backend, with the relevant `*_services` list passed in. |
 
 > 🧪 **Experimental learning lab.** The playbooks and task files are wired up
 > end to end — `reboot_Application.yml` stops, reboots, and restarts each host
