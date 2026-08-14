@@ -12,3 +12,10 @@ homepath: "{{ playbook_dir }}"
 pvKeys1: "{{ homepath }}/.vagrant/machines/{{ env1 }}/virtualbox/private_key"
 pvKeys2: "{{ homepath }}/.vagrant/machines/{{ env2 }}/virtualbox/private_key"
 pvKeys3: "{{ homepath }}/.vagrant/machines/{{ env3 }}/virtualbox/private_key"
+
+# Application services managed by reboot_Application.yml. Populate these with
+# the systemd/init service names running on your frontend and backend hosts.
+# They default to empty lists so the reboot workflow runs as a no-op on a bare
+# lab (nothing to stop/start) until you have real services to manage.
+frontend_services: []
+backend_services: []

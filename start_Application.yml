@@ -1,0 +1,14 @@
+---
+# Task list: start the frontend application services after a reboot.
+#
+# Included by reboot_Application.yml for hosts in the "frontend" group via
+# `include_tasks`. Driven by the `frontend_services` variable (see
+# group_vars/all.yml); defaults to an empty list, so it is a no-op until you
+# list your real services.
+- name: Start frontend application services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+  loop: "{{ frontend_services }}"
+  loop_control:
+    label: "{{ item }}"

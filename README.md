@@ -70,7 +70,11 @@ devops-labs-tchize/
 ├── towerinstall.yml              #   ↳ playbook: install Ansible Tower
 ├── test_connection.yml           #   ↳ playbook: connectivity check (ping)
 ├── reboot_Application.yml        #   ↳ playbook: group-based reboot workflow
-└── reboot_Application-v2.yml     #   ↳ playbook: rolling-reboot variant
+├── reboot_Application-v2.yml     #   ↳ playbook: rolling-reboot variant
+├── stop_Application.yml          #   ↳ tasks: stop frontend app services
+├── start_Application.yml         #   ↳ tasks: start frontend app services
+├── stop_backend_apps.yml         #   ↳ tasks: stop backend app services
+└── start_backend_apps.yml        #   ↳ tasks: start backend app services
 ```
 
 Each project directory is the source of truth for that project's own setup,
@@ -131,23 +135,31 @@ orchestrate application-aware reboots.
 | ---- | ------- |
 | `Vagrantfile` | Defines the three VMs (`ansible_tower`, `deploy_env1`, `deploy_env2`) on the `centos/8` box, each with a private-network IP (`192.168.56.10–12`), a bridged public interface (pin the NIC with `VAGRANT_BRIDGE`), and a shell provisioner. |
 | `scripts/updateCentos.sh` | VM bootstrap: repoints CentOS 8 repos at the `vault.centos.org` mirror (CentOS 8 is EOL), updates packages, and installs `net-tools` and `python3` with `dnf`. |
-| `group_vars/all.yml` | Shared variables: Vagrant user, environment names, and private-key paths derived from `playbook_dir`. |
-| `inventories/hosts/hosts` | Static inventory grouping the hosts into `instance_group`, `tower`, and `workernodes`, with per-host private keys. |
+| `group_vars/all.yml` | Shared variables: Vagrant user, environment names, private-key paths derived from `playbook_dir`, and the `frontend_services` / `backend_services` lists consumed by the reboot workflow. |
+| `inventories/hosts/hosts` | Static inventory grouping the hosts into `instance_group`, `tower`, `workernodes`, and the role groups `frontend` (`deploy_env1`) and `backend` (`deploy_env2`), with per-host private keys. |
 | `towerinstall.yml` | Installs EPEL and Ansible, downloads the Ansible Tower setup tarball, unpacks it under `/opt`, and runs the installer. |
 | `test_connection.yml` | Pings the `instance_group` hosts to confirm connectivity. |
-| `reboot_Application.yml` | Reboot orchestration keyed on inventory group membership (`frontend` / `backend`): stop → reboot → start. |
+| `reboot_Application.yml` | Reboot orchestration keyed on inventory group membership (`frontend` / `backend`): stop → reboot → start, via the `include_tasks` files below. |
 | `reboot_Application-v2.yml` | Alternative rolling reboot (`serial: 1`) that reboots hosts one at a time and health-checks each before continuing. |
+| `stop_Application.yml` / `start_Application.yml` | Task lists that stop / start the frontend services (`frontend_services`) on `frontend` hosts. |
+| `stop_backend_apps.yml` / `start_backend_apps.yml` | Task lists that stop / start the backend services (`backend_services`) on `backend` hosts. |
 
-> 🧪 **Experimental / learning scaffold.** Some referenced task files (the
-> per-application stop/start steps) and inventory groups are placeholders for
-> future work, so the reboot playbooks are illustrative rather than
-> ready-to-run end to end. Prerequisites: [Vagrant](https://www.vagrantup.com/)
-> and a provider such as [VirtualBox](https://www.virtualbox.org/).
+> 🧪 **Experimental learning lab.** The playbooks and task files are wired up
+> end to end — `reboot_Application.yml` stops, reboots, and restarts each host
+> using the `frontend` / `backend` inventory groups. The service lists
+> (`frontend_services` / `backend_services` in `group_vars/all.yml`) default to
+> empty, so the stop/start steps are no-ops until you populate them with your
+> real service names. Prerequisites: [Vagrant](https://www.vagrantup.com/) and a
+> provider such as [VirtualBox](https://www.virtualbox.org/).
 
 ```bash
 # From the repository root
 vagrant up                          # bring up the three CentOS 8 VMs
 ansible-playbook -i inventories/hosts/hosts test_connection.yml
+
+# Reboot workflow (populate frontend_services / backend_services first to
+# actually stop/start apps; otherwise those steps are no-ops):
+ansible-playbook -i inventories/hosts/hosts reboot_Application.yml
 ```
 
 ## Getting started
