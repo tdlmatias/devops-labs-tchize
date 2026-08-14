@@ -134,6 +134,87 @@ therefore intentionally deferred until a separate packaging design is approved.
 
 ---
 
+### Ansible / Vagrant lab
+
+A local lab for practising Ansible against disposable virtual machines. Unlike
+the other project, its files currently live at the **repository root** rather
+than in a dedicated directory — a known deviation from the monorepo shape, kept
+as-is while the lab is still an evolving learning scaffold.
+
+#### Topology
+
+[Vagrant](https://www.vagrantup.com/) provisions three CentOS 8 VMs on a shared
+host-only network plus a bridged public interface:
+
+| VM (`vm.define`) | Hostname | Private IP | Role |
+| ---------------- | -------- | ---------- | ---- |
+| `ansible_tower` | `ansible-tower` | `192.168.56.10` | Ansible Tower control node |
+| `deploy_env1` | `deploy-env1` | `192.168.56.11` | Deployment target |
+| `deploy_env2` | `deploy-env2` | `192.168.56.12` | Deployment target |
+
+Each VM runs the same shell provisioner (`scripts/updateCentos.sh`) with
+`privileged: true`. Because CentOS 8 is end-of-life, that script first repoints
+the repos at the `vault.centos.org` mirror, then updates and installs
+`net-tools` and `python3` using `dnf`. The public interface is bridged onto a
+deterministic NIC selected via the `VAGRANT_BRIDGE` environment variable
+(default `eth0`) so `vagrant up` does not prompt or pick an adapter at random on
+multi-NIC hosts.
+
+#### File layout
+
+| File | Responsibility |
+| ---- | -------------- |
+| `Vagrantfile` | VM definitions, networking, and the bootstrap provisioner. |
+| `Vagrantfile_back` | A loop-based alternative Vagrant configuration kept for reference. |
+| `scripts/updateCentos.sh` | Idempotent VM bootstrap; runs as root under the Vagrant provisioner (no `sudo`), with `set -euo pipefail`. |
+| `group_vars/all.yml` | Shared vars (`userBox`, environment names, private-key paths). Paths derive from `playbook_dir` rather than a hardcoded absolute path; the directory follows Ansible's standard `group_vars/` name so vars auto-load. |
+| `inventories/hosts/hosts` | Static INI inventory: `instance_group`, `tower`, and `workernodes`. Private-key paths are plain relative paths under `.vagrant/machines/<name>/` (INI inventories are not Jinja-templated). |
+| `towerinstall.yml` | Installs EPEL + Ansible, downloads and unpacks the Tower setup tarball under `/opt`, and runs `setup.sh`. Targets the `tower` group with a quoted `become_user`. |
+| `test_connection.yml` | Connectivity smoke test using `ansible.builtin.ping` against `instance_group`. |
+| `reboot_Application.yml` | Application-aware reboot workflow. |
+| `reboot_Application-v2.yml` | Rolling-reboot variant. |
+
+#### Reboot orchestration
+
+Two complementary approaches to rebooting application hosts are provided:
+
+- **`reboot_Application.yml`** classifies hosts by **inventory group
+  membership** (`'frontend' in group_names` / `'backend' in group_names`)
+  rather than deriving a role at runtime. It stops the relevant application,
+  reboots via `ansible.builtin.reboot`, and starts it again, using
+  `include_tasks` for the per-application steps.
+
+```mermaid
+flowchart TD
+    A[Play: hosts all, become] --> B{in group_names?}
+    B -- frontend --> C[include_tasks stop_Application.yml]
+    B -- backend --> D[include_tasks stop_backend_apps.yml]
+    C --> E[reboot module]
+    D --> E
+    E --> F{in group_names?}
+    F -- frontend --> G[include_tasks start_Application.yml]
+    F -- backend --> H[include_tasks start_backend_apps.yml]
+```
+
+- **`reboot_Application-v2.yml`** takes a fleet-availability angle: `serial: 1`
+  reboots hosts **one at a time**, waiting for each to come back
+  (`wait_for_connection`) and pass a `ping` before proceeding, so the group is
+  never fully down at once. It is self-contained and does not depend on external
+  stop/start task files.
+
+#### Status and caveats
+
+This is a **learning scaffold**, not a hardened deployment:
+
+- The per-application `stop_*` / `start_*` task files referenced by
+  `reboot_Application.yml`, and the `frontend` / `backend` inventory groups it
+  keys on, are **placeholders** for future work — that playbook is illustrative
+  rather than runnable end to end today.
+- There is no CI for the lab; it is validated manually (YAML/INI parsing, shell
+  and Ruby syntax) rather than by an automated suite.
+
+---
+
 ## Adding a project
 
 New projects follow the same shape: a dedicated top-level directory with its own

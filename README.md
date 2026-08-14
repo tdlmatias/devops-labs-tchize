@@ -17,6 +17,7 @@
 - [Repository structure](#repository-structure)
 - [Projects](#projects)
   - [qBittorrent Search Plugin Synchroniser](#qbittorrent-search-plugin-synchroniser)
+  - [Ansible / Vagrant lab](#ansible--vagrant-lab)
 - [Getting started](#getting-started)
 - [Conventions](#conventions)
 - [Continuous integration and security](#continuous-integration-and-security)
@@ -53,23 +54,40 @@ devops-labs-tchize/
 │   └── ISSUE_TEMPLATE/
 ├── docs/
 │   └── ARCHITECTURE.md           # Repo layout + per-project design notes
-└── qbittorrent-plugin-sync/      # Project: qBittorrent plugin synchroniser
-    ├── README.md                 #   ↳ full project documentation
-    ├── qbt_plugin_sync.py
-    ├── qbt_sync/                 #   ↳ package modules
-    ├── tests/                    #   ↳ offline test suite
-    └── requirements*.txt
+│
+├── qbittorrent-plugin-sync/      # Project: qBittorrent plugin synchroniser
+│   ├── README.md                 #   ↳ full project documentation
+│   ├── qbt_plugin_sync.py
+│   ├── qbt_sync/                 #   ↳ package modules
+│   ├── tests/                    #   ↳ offline test suite
+│   └── requirements*.txt
+│
+│   # Ansible / Vagrant lab (currently at the repository root)
+├── Vagrantfile                   #   ↳ 3 CentOS 8 VMs (tower + 2 deploy envs)
+├── scripts/updateCentos.sh       #   ↳ VM bootstrap provisioner
+├── group_vars/all.yml            #   ↳ shared Ansible variables
+├── inventories/hosts/hosts       #   ↳ static inventory
+├── towerinstall.yml              #   ↳ playbook: install Ansible Tower
+├── test_connection.yml           #   ↳ playbook: connectivity check (ping)
+├── reboot_Application.yml        #   ↳ playbook: group-based reboot workflow
+└── reboot_Application-v2.yml     #   ↳ playbook: rolling-reboot variant
 ```
 
 Each project directory is the source of truth for that project's own setup,
 usage, and tests. This root document is the **map**; the project READMEs are the
 **territory**.
 
+> **Note:** the Ansible / Vagrant lab currently lives as a set of files at the
+> repository root rather than in a dedicated project directory. It is an evolving
+> learning scaffold; consolidating it under its own directory is a known future
+> cleanup.
+
 ## Projects
 
 | Project | Language | Status | Description |
 | ------- | -------- | ------ | ----------- |
 | [`qbittorrent-plugin-sync`](qbittorrent-plugin-sync/) | Python 3.11+ | ✅ Stable | Safely synchronises the unofficial "Public Sites" qBittorrent search plugins with a running qBittorrent instance via the WebUI API. |
+| [Ansible / Vagrant lab](#ansible--vagrant-lab) | Vagrant · Ansible · Bash | 🧪 Experimental | Local multi-VM CentOS 8 lab (Vagrant) with Ansible playbooks for installing Ansible Tower, checking connectivity, and orchestrating application-aware reboots. |
 
 ### qBittorrent Search Plugin Synchroniser
 
@@ -97,6 +115,39 @@ cd qbittorrent-plugin-sync
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python3 qbt_plugin_sync.py          # dry run — changes nothing
+```
+
+### Ansible / Vagrant lab
+
+A local, disposable lab for practising **Ansible** against real virtual
+machines. [Vagrant](https://www.vagrantup.com/) brings up three CentOS 8 VMs on
+a host-only network — one Ansible Tower control node and two deployment
+environments — and a set of playbooks install Tower, verify connectivity, and
+orchestrate application-aware reboots.
+
+**Components**
+
+| File | Purpose |
+| ---- | ------- |
+| `Vagrantfile` | Defines the three VMs (`ansible_tower`, `deploy_env1`, `deploy_env2`) on the `centos/8` box, each with a private-network IP (`192.168.56.10–12`), a bridged public interface (pin the NIC with `VAGRANT_BRIDGE`), and a shell provisioner. |
+| `scripts/updateCentos.sh` | VM bootstrap: repoints CentOS 8 repos at the `vault.centos.org` mirror (CentOS 8 is EOL), updates packages, and installs `net-tools` and `python3` with `dnf`. |
+| `group_vars/all.yml` | Shared variables: Vagrant user, environment names, and private-key paths derived from `playbook_dir`. |
+| `inventories/hosts/hosts` | Static inventory grouping the hosts into `instance_group`, `tower`, and `workernodes`, with per-host private keys. |
+| `towerinstall.yml` | Installs EPEL and Ansible, downloads the Ansible Tower setup tarball, unpacks it under `/opt`, and runs the installer. |
+| `test_connection.yml` | Pings the `instance_group` hosts to confirm connectivity. |
+| `reboot_Application.yml` | Reboot orchestration keyed on inventory group membership (`frontend` / `backend`): stop → reboot → start. |
+| `reboot_Application-v2.yml` | Alternative rolling reboot (`serial: 1`) that reboots hosts one at a time and health-checks each before continuing. |
+
+> 🧪 **Experimental / learning scaffold.** Some referenced task files (the
+> per-application stop/start steps) and inventory groups are placeholders for
+> future work, so the reboot playbooks are illustrative rather than
+> ready-to-run end to end. Prerequisites: [Vagrant](https://www.vagrantup.com/)
+> and a provider such as [VirtualBox](https://www.virtualbox.org/).
+
+```bash
+# From the repository root
+vagrant up                          # bring up the three CentOS 8 VMs
+ansible-playbook -i inventories/hosts/hosts test_connection.yml
 ```
 
 ## Getting started
