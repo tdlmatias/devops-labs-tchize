@@ -9,6 +9,13 @@ Individual projects may additionally maintain their own history in their READMEs
 
 ## [Unreleased]
 
+### Fixed
+- **Ansible / Vagrant lab:** align `inventories/hosts/hosts` with the
+  Vagrantfile private network (`192.168.56.10-12`) so the documented
+  connectivity check works against a fresh `vagrant up`, and let
+  `towerinstall.yml` escalate to root instead of the unprivileged `vagrant`
+  user so its package-install and `/opt` extraction steps can run.
+
 ### Added
 - **Ansible / Vagrant lab:** a local multi-VM CentOS 8 environment
   (`Vagrantfile`) provisioning an Ansible Tower control node and two deployment

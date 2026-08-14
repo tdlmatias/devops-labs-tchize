@@ -1,5 +1,9 @@
 # Static inventory for the Vagrant lab.
 #
+# Addresses match the private_network IPs assigned in the Vagrantfile
+# (192.168.56.10-12), so this inventory works against a fresh `vagrant up`
+# out of the box.
+#
 # Private key paths are relative to the Vagrant project root (this repo),
 # where `vagrant up` writes them under .vagrant/machines/<name>/. INI
 # inventories are not Jinja-templated, so use plain relative paths here
@@ -7,13 +11,13 @@
 # override with `-e` / `--private-key` if you invoke it from elsewhere.
 
 [instance_group]
-192.168.1.245   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/ansible_tower/virtualbox/private_key
-192.168.1.246   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env1/virtualbox/private_key
-192.168.1.247   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env2/virtualbox/private_key
+192.168.56.10   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/ansible_tower/virtualbox/private_key
+192.168.56.11   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env1/virtualbox/private_key
+192.168.56.12   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env2/virtualbox/private_key
 
 [tower]
-192.168.1.245   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/ansible_tower/virtualbox/private_key
+192.168.56.10   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/ansible_tower/virtualbox/private_key
 
 [workernodes]
-192.168.1.246   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env1/virtualbox/private_key
-192.168.1.247   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env2/virtualbox/private_key
+192.168.56.11   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env1/virtualbox/private_key
+192.168.56.12   ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/deploy_env2/virtualbox/private_key

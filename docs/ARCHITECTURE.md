@@ -169,7 +169,7 @@ multi-NIC hosts.
 | `scripts/updateCentos.sh` | Idempotent VM bootstrap; runs as root under the Vagrant provisioner (no `sudo`), with `set -euo pipefail`. |
 | `group_vars/all.yml` | Shared vars (`userBox`, environment names, private-key paths). Paths derive from `playbook_dir` rather than a hardcoded absolute path; the directory follows Ansible's standard `group_vars/` name so vars auto-load. |
 | `inventories/hosts/hosts` | Static INI inventory: `instance_group`, `tower`, and `workernodes`. Private-key paths are plain relative paths under `.vagrant/machines/<name>/` (INI inventories are not Jinja-templated). |
-| `towerinstall.yml` | Installs EPEL + Ansible, downloads and unpacks the Tower setup tarball under `/opt`, and runs `setup.sh`. Targets the `tower` group with a quoted `become_user`. |
+| `towerinstall.yml` | Installs EPEL + Ansible, downloads and unpacks the Tower setup tarball under `/opt`, and runs `setup.sh`. Targets the `tower` group and escalates to root (`become`), since the package and `/opt` steps require root. |
 | `test_connection.yml` | Connectivity smoke test using `ansible.builtin.ping` against `instance_group`. |
 | `reboot_Application.yml` | Application-aware reboot workflow. |
 | `reboot_Application-v2.yml` | Rolling-reboot variant. |

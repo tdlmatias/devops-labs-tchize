@@ -1,7 +1,8 @@
 ---
 - hosts: tower
   gather_facts: True
-  become_user: "{{ userBox }}"
+  # Installing packages and unpacking into /opt requires root, so escalate to
+  # root (the default become_user) rather than the unprivileged vagrant user.
   become: yes
 
   tasks:
